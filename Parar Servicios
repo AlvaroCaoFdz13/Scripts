@@ -1,0 +1,59 @@
+#!/usr/bin/env python3
+"""
+parar_servicios.py
+Para uno o todos los servicios del clúster Docker Swarm.
+Uso:
+  python3 parar_servicios.py nginx        → para un servicio
+  python3 parar_servicios.py --all        → para todos
+Salida: stdout JSON + output/parar_servicios.json
+"""
+ 
+import subprocess, json, os, sys
+from datetime import datetime
+ 
+OUTPUT_FILE = os.path.join(os.path.dirname(__file__), "..", "output", "parar_servicios.json")
+ 
+if len(sys.argv) < 2:
+    print(json.dumps({"error": "Indica un servicio o usa --all"}, indent=2))
+    sys.exit(1)
+ 
+# Obtener lista de servicios a parar
+if sys.argv[1] == "--all":
+    result = subprocess.run(
+        ["docker", "service", "ls", "--format", "{{.Name}}"],
+        capture_output=True, text=True
+    )
+    if result.returncode != 0:
+        print(json.dumps({"error": result.stderr.strip()}, indent=2))
+        sys.exit(1)
+    targets = result.stdout.strip().splitlines()
+else:
+    targets = [sys.argv[1]]
+ 
+if not targets:
+    print(json.dumps({"error": "No hay servicios que parar"}, indent=2))
+    sys.exit(0)
+ 
+# Parar cada servicio
+resultados = []
+for nombre in targets:
+    r = subprocess.run(["docker", "service", "rm", nombre], capture_output=True, text=True)
+    resultados.append({
+        "service": nombre,
+        "status":  "eliminado" if r.returncode == 0 else "error",
+        "detalle": r.stderr.strip() if r.returncode != 0 else None
+    })
+ 
+data = {
+    "timestamp":  datetime.now().isoformat(),
+    "swarm_node": "NodoManager",
+    "resultados": resultados
+}
+ 
+print(json.dumps(data, indent=2, ensure_ascii=False))
+ 
+os.makedirs(os.path.dirname(OUTPUT_FILE), exist_ok=True)
+with open(OUTPUT_FILE, "w") as f:
+    json.dump(data, f, indent=2, ensure_ascii=False)
+ 
+print(f"\n[OK] JSON guardado en: {OUTPUT_FILE}")
