@@ -1,0 +1,50 @@
+#!/usr/bin/env python3
+"""
+listar_servicios.py
+Lista los servicios activos en el clúster Docker Swarm.
+Salida: stdout JSON + output/listar_servicios.json
+"""
+ 
+import subprocess, json, os, sys
+from datetime import datetime
+ 
+OUTPUT_FILE = os.path.join(os.path.dirname(__file__), "..", "output", "listar_servicios.json")
+ 
+result = subprocess.run(
+    ["docker", "service", "ls", "--format", "{{.ID}}|{{.Name}}|{{.Mode}}|{{.Replicas}}|{{.Image}}|{{.Ports}}"],
+    capture_output=True, text=True
+)
+ 
+if result.returncode != 0:
+    print(f"[ERROR] {result.stderr.strip()}")
+    sys.exit(1)
+ 
+services = []
+for line in result.stdout.strip().splitlines():
+    id_, name, mode, replicas, image, ports = (line.split("|") + [""] * 6)[:6]
+    r = replicas.split("/")
+    running = int(r[0]) if r[0].isdigit() else 0
+    total   = int(r[1]) if len(r) > 1 and r[1].isdigit() else 0
+    services.append({
+        "id":       id_,
+        "name":     name,
+        "mode":     mode,
+        "replicas": f"{running}/{total}",
+        "healthy":  running == total and total > 0,
+        "image":    image.split("@")[0],
+        "ports":    ports or None
+    })
+ 
+data = {
+    "timestamp": datetime.now().isoformat(),
+    "swarm_node": "NodoManager",
+    "services":  services
+}
+ 
+print(json.dumps(data, indent=2, ensure_ascii=False))
+ 
+os.makedirs(os.path.dirname(OUTPUT_FILE), exist_ok=True)
+with open(OUTPUT_FILE, "w") as f:
+    json.dump(data, f, indent=2, ensure_ascii=False)
+ 
+print(f"\n[OK] JSON guardado en: {OUTPUT_FILE}")
