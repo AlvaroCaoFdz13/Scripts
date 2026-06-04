@@ -20,6 +20,7 @@ Estructura:
       └── Listar Backups          → listar los backups disponibles en una carpeta
 
 Funcionalidad de los Scripts:
+
 1._ Listado de Servicios
     Muestra los servicios activos en el clúster con su estado, réplicas, imagen y puertos.
         
