@@ -1,0 +1,53 @@
+#!/usr/bin/env python3
+"""
+restore.py
+Restaura un volumen Docker desde un fichero .tar.gz
+Uso:
+  python3 restore.py <volumen> <fichero.tar.gz>
+Salida: stdout JSON + output/restore.json
+"""
+ 
+import subprocess, json, os, sys
+from datetime import datetime
+ 
+OUTPUT_FILE = os.path.join(os.path.dirname(__file__), "..", "output", "restore.json")
+ 
+if len(sys.argv) < 3:
+    print(json.dumps({"error": "Uso: python3 restore.py <volumen> <fichero.tar.gz>"}, indent=2))
+    sys.exit(1)
+ 
+volumen = sys.argv[1]
+fichero = sys.argv[2]
+ 
+if not os.path.exists(fichero):
+    print(json.dumps({"error": f"Fichero no encontrado: {fichero}"}, indent=2))
+    sys.exit(1)
+ 
+directorio = os.path.dirname(os.path.abspath(fichero))
+nombre     = os.path.basename(fichero)
+ 
+result = subprocess.run([
+    "docker", "run", "--rm",
+    "-v", f"{volumen}:/data",
+    "-v", f"{directorio}:/backup",
+    "alpine",
+    "tar", "xzf", f"/backup/{nombre}", "-C", "/data"
+], capture_output=True, text=True)
+ 
+data = {
+    "timestamp":  datetime.now().isoformat(),
+    "swarm_node": "NodoManager",
+    "volumen":    volumen,
+    "fichero":    fichero,
+    "status":     "restaurado" if result.returncode == 0 else "error",
+    "detalle":    result.stderr.strip() if result.returncode != 0 else None
+}
+ 
+print(json.dumps(data, indent=2, ensure_ascii=False))
+ 
+os.makedirs(os.path.dirname(OUTPUT_FILE), exist_ok=True)
+with open(OUTPUT_FILE, "w") as f:
+    json.dump(data, f, indent=2, ensure_ascii=False)
+ 
+print(f"\n[OK] JSON guardado en: {OUTPUT_FILE}")
+ 
