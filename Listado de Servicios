@@ -1,10 +1,6 @@
 #!/usr/bin/env python3
-"""
-listar_servicios.py
-Lista los servicios activos en el clúster Docker Swarm.
-Salida: stdout JSON + output/listar_servicios.json
-"""
- 
+
+
 import subprocess, json, os, sys
 from datetime import datetime
  
