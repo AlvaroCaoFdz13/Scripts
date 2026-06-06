@@ -1,11 +1,5 @@
 #!/usr/bin/env python3
-"""
-lanzar_servicios.py
-Despliega un stack en el clúster Docker Swarm desde un fichero .yml
-Uso:
-  python3 lanzar_servicios.py <nombre_stack> <fichero.yml>
-Salida: stdout JSON + output/lanzar_servicios.json
-"""
+
  
 import subprocess, json, os, sys
 from datetime import datetime
