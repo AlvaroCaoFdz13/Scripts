@@ -1,11 +1,5 @@
 #!/usr/bin/env python3
-"""
-restore.py
-Restaura un volumen Docker desde un fichero .tar.gz
-Uso:
-  python3 restore.py <volumen> <fichero.tar.gz>
-Salida: stdout JSON + output/restore.json
-"""
+
  
 import subprocess, json, os, sys
 from datetime import datetime
