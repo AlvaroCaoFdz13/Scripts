@@ -1,27 +1,26 @@
 #!/usr/bin/env python3
 
- 
 import subprocess, json, os, sys
 from datetime import datetime
- 
+
 OUTPUT_FILE = os.path.join(os.path.dirname(__file__), "..", "output", "lanzar_servicios.json")
- 
+
 if len(sys.argv) < 3:
     print(json.dumps({"error": "Uso: python3 lanzar_servicios.py <nombre_stack> <fichero.yml>"}, indent=2))
     sys.exit(1)
- 
-stack  = sys.argv[1]
+
+stack   = sys.argv[1]
 fichero = sys.argv[2]
- 
+
 if not os.path.exists(fichero):
     print(json.dumps({"error": f"Fichero no encontrado: {fichero}"}, indent=2))
     sys.exit(1)
- 
+
 result = subprocess.run(
     ["docker", "stack", "deploy", "-c", fichero, stack],
     capture_output=True, text=True
 )
- 
+
 data = {
     "timestamp":  datetime.now().isoformat(),
     "swarm_node": "NodoManager",
@@ -30,12 +29,11 @@ data = {
     "status":     "desplegado" if result.returncode == 0 else "error",
     "detalle":    result.stdout.strip() or result.stderr.strip() or None
 }
- 
+
 print(json.dumps(data, indent=2, ensure_ascii=False))
- 
+
 os.makedirs(os.path.dirname(OUTPUT_FILE), exist_ok=True)
 with open(OUTPUT_FILE, "w") as f:
     json.dump(data, f, indent=2, ensure_ascii=False)
- 
+
 print(f"\n[OK] JSON guardado en: {OUTPUT_FILE}")
- 
