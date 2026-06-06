@@ -1,0 +1,27 @@
+import subprocess, sys
+
+opciones = {
+    "1": ("Backup de volúmenes Docker", ["python3", "scripts/backup.py", "/mnt/backups"]),
+    "2": ("Limpieza de contenedores",   ["python3", "scripts/limpieza.py"]),
+    "3": ("Monitoreo del swarm",        ["python3", "scripts/monitoreo.py"]),
+}
+
+def mostrar_menu():
+    print("\n===== MENÚ PRINCIPAL =====")
+    for key, (descripcion, _) in opciones.items():
+        print(f"  {key}. {descripcion}")
+    print("  0. Salir")
+    print("==========================")
+
+while True:
+    mostrar_menu()
+    eleccion = input("\nElige una opción: ").strip()
+
+    if eleccion == "0":
+        print("Saliendo...")
+        break
+    elif eleccion in opciones:
+        _, comando = opciones[eleccion]
+        subprocess.run(comando)  # ejecuta el script elegido
+    else:
+        print("Opción no válida.")
