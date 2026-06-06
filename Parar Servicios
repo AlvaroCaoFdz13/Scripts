@@ -1,13 +1,5 @@
 #!/usr/bin/env python3
-"""
-parar_servicios.py
-Para uno o todos los servicios del clúster Docker Swarm.
-Uso:
-  python3 parar_servicios.py nginx        → para un servicio
-  python3 parar_servicios.py --all        → para todos
-Salida: stdout JSON + output/parar_servicios.json
-"""
- 
+
 import subprocess, json, os, sys
 from datetime import datetime
  
