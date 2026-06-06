@@ -2,43 +2,43 @@
 
 import json, os, sys
 from datetime import datetime
- 
+
 OUTPUT_FILE = os.path.join(os.path.dirname(__file__), "..", "output", "listar_backups.json")
- 
+
 if len(sys.argv) < 2:
     print(json.dumps({"error": "Uso: python3 listar_backups.py <carpeta>"}, indent=2))
     sys.exit(1)
- 
+
 carpeta = sys.argv[1]
- 
+
 if not os.path.exists(carpeta):
     print(json.dumps({"error": f"Carpeta no encontrada: {carpeta}"}, indent=2))
     sys.exit(1)
- 
+
 backups = []
 for f in sorted(os.listdir(carpeta)):
     if not f.endswith(".tar.gz"):
         continue
-    ruta  = os.path.join(carpeta, f)
-    stat  = os.stat(ruta)
+    ruta = os.path.join(carpeta, f)
+    stat = os.stat(ruta)
     backups.append({
-        "fichero": f,
-        "ruta":    ruta,
-        "tamanio": f"{round(stat.st_size / 1024, 2)} KB",
-        "fecha":   datetime.fromtimestamp(stat.st_mtime).isoformat()
+        "fichero":  f,
+        "ruta":     ruta,
+        "tamanio":  f"{round(stat.st_size / 1024, 2)} KB",
+        "fecha":    datetime.fromtimestamp(stat.st_mtime).isoformat()
     })
- 
+
 data = {
     "timestamp": datetime.now().isoformat(),
     "carpeta":   carpeta,
     "total":     len(backups),
     "backups":   backups
 }
- 
+
 print(json.dumps(data, indent=2, ensure_ascii=False))
- 
+
 os.makedirs(os.path.dirname(OUTPUT_FILE), exist_ok=True)
 with open(OUTPUT_FILE, "w") as f:
     json.dump(data, f, indent=2, ensure_ascii=False)
- 
+
 print(f"\n[OK] JSON guardado en: {OUTPUT_FILE}")
