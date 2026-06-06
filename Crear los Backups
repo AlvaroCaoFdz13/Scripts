@@ -1,38 +1,36 @@
 #!/usr/bin/env python3
 
- 
 import subprocess, json, os, sys
 from datetime import datetime
- 
+
 OUTPUT_FILE = os.path.join(os.path.dirname(__file__), "..", "output", "backup.json")
- 
+
 if len(sys.argv) < 2:
-    print(json.dumps({"error": "Uso: python3 backup.py <destino>"}, indent=2))
+    print(json.dumps({"error": "Uso: python3 crear_backups.py <destino>"}, indent=2))
     sys.exit(1)
- 
+
 destino   = sys.argv[1]
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
- 
+
 if not os.path.exists(destino):
     os.makedirs(destino)
- 
-# Obtener volúmenes
+
+# Listamos los volúmenes que hay
 result = subprocess.run(
     ["docker", "volume", "ls", "--format", "{{.Name}}"],
     capture_output=True, text=True
 )
- 
+
 if result.returncode != 0:
     print(json.dumps({"error": result.stderr.strip()}, indent=2))
     sys.exit(1)
- 
+
 volumenes = result.stdout.strip().splitlines()
- 
+
 if not volumenes:
     print(json.dumps({"error": "No hay volúmenes disponibles"}, indent=2))
     sys.exit(0)
- 
-# Backup de cada volumen
+
 resultados = []
 for vol in volumenes:
     fichero = os.path.join(destino, f"{vol}_{timestamp}.tar.gz")
@@ -43,26 +41,25 @@ for vol in volumenes:
         "alpine",
         "tar", "czf", f"/backup/{vol}_{timestamp}.tar.gz", "-C", "/data", "."
     ], capture_output=True, text=True)
- 
+
     resultados.append({
         "volumen": vol,
         "fichero": fichero,
         "status":  "ok" if r.returncode == 0 else "error",
         "detalle": r.stderr.strip() if r.returncode != 0 else None
     })
- 
+
 data = {
     "timestamp":  datetime.now().isoformat(),
     "swarm_node": "NodoManager",
     "destino":    destino,
     "resultados": resultados
 }
- 
+
 print(json.dumps(data, indent=2, ensure_ascii=False))
- 
+
 os.makedirs(os.path.dirname(OUTPUT_FILE), exist_ok=True)
 with open(OUTPUT_FILE, "w") as f:
     json.dump(data, f, indent=2, ensure_ascii=False)
- 
+
 print(f"\n[OK] JSON guardado en: {OUTPUT_FILE}")
- 
