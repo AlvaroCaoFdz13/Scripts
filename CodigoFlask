@@ -1,0 +1,46 @@
+from flask import Flask, render_template, jsonify
+import docker
+
+app = Flask(__name__)
+client = docker.from_env()
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/api/data')
+def get_data():
+    nodes = []
+    for node in client.nodes.list():
+        nodes.append({
+            'hostname': node.attrs['Description']['Hostname'],
+            'role': node.attrs['Spec']['Role'],
+            'status': node.attrs['Status']['State'],
+        })
+    services = []
+    for svc in client.services.list():
+        replicas = svc.attrs['Spec']['Mode'].get('Replicated', {}).get('Replicas', 1)
+        services.append({
+            'id': svc.id,
+            'name': svc.name,
+            'image': svc.attrs['Spec']['TaskTemplate']['ContainerSpec']['Image'].split('@')[0],
+
+            'replicas': replicas
+        })
+    return jsonify({'nodes': nodes, 'services': services})
+
+@app.route('/api/tasks/<service_id>')
+def get_tasks(service_id):
+    tasks = []
+    for task in client.api.tasks(filters={'service': service_id}):
+        tasks.append({
+            'id': task['ID'][:12],
+            'node': task['NodeID'][:12],
+            'state': task['Status']['State'],
+            'error': task['Status'].get('Err', '')
+        })
+    return jsonify(tasks)
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000, debug=False)
+
